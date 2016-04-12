@@ -1,10 +1,10 @@
 # NAME
 
-iod - Interpreter of deletion.
+delete.pl - Interpreter of deletion.
 
 # DEMO
 
-![iod](https://dl.dropboxusercontent.com/u/7779513/del/2016-04-12_del.gif)
+![delete](https://dl.dropboxusercontent.com/u/7779513/del/2016-04-12_del.gif)
 
 # LICENSE
 

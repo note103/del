@@ -3,84 +3,88 @@ use strict;
 use warnings;
 use feature 'say';
 
-
-# Init:
-
-print "f/d/a/q?\n>> ";
-chomp(my $init = <STDIN>);
-
 my $fmt = '';
-if ($init eq 'f') {
-    $fmt = 'file'
-}
-elsif ($init eq 'd') {
-    $fmt = 'dir'
-}
-elsif ($init eq 'a') {
-    $fmt = 'other'
-}
-else {
-    say "Exit.";
-    exit;
-}
 
-# Command:
+init();
 
-say "pwd:";
-pwd();
-say 'ls:';
-iter($fmt);
-main($fmt);
+sub init {
+    print "f/d/a/q?\n>> ";
+    chomp(my $init = <STDIN>);
+    
+    $fmt = '';
+    if ($init eq 'f') {
+        $fmt = 'file'
+    }
+    elsif ($init eq 'd') {
+        $fmt = 'dir'
+    }
+    elsif ($init eq 'a') {
+        $fmt = 'other'
+    }
+    elsif ($init eq 'q') {
+        say "Exit.";
+        exit;
+    }
+    else {
+        init();
+    }
 
-# Functions:
+    say "pwd:";
+    pwd();
+
+    say 'ls:';
+    iter($fmt);
+
+    main($fmt);
+}
 
 sub pwd {
     my $pwd = `pwd`;
     say "\t$pwd";
 }
 
-my (@file, @dir, @other) = '';
 sub iter {
+    my (@file, @dir, @other) = '';
     my $fmt = shift;
     my $dir = '.';
     my $last_dir = '';
 
     opendir (my $iter, $dir) or die;
-        for (readdir $iter) {
-            next if ($_ =~ /^\./);
-            if (-f $dir.'/'.$_) {
-                push @file, "\tfile: $dir/$_\n";
-            } elsif (-d $dir.'/'.$_) {
-                push @dir, "\tdir: $dir/$_\n";
-                $last_dir = $_;
-            } else {
-                push @other, "\tother: $dir/$_\n";
-            }
+    for (readdir $iter) {
+        next if ($_ =~ /^\./);
+        if (-f $dir.'/'.$_) {
+            push @file, "\tfile: $dir/$_\n";
+        } elsif (-d $dir.'/'.$_) {
+            push @dir, "\tdir: $dir/$_\n";
+            $last_dir = $_;
+        } else {
+            push @other, "\tother: $dir/$_\n";
         }
+    }
     closedir $iter;
 
-    ls($fmt);
+    ls($fmt, \@file, \@dir, \@other);
 }
 
 sub ls {
-    my $fmt = shift;
+    my ($fmt, $file, $dir, $other) = @_;
     if ($fmt eq 'dir') {
-        print @dir;
+        print @$dir;
     }
     elsif ($fmt eq 'file') {
-        print @file;
+        print @$file;
     }
     else {
-        print @dir;
-        print @file;
-        print @other;
+        print @$dir;
+        print @$file;
+        print @$other;
     }
 }
 
 sub main {
     my $trash = [];
     say '';
-    say "Put the words first & other.(or [ls/q/quit])";
+    say "Put the target words.(or [ls/q/quit])";
     chomp(my $get = <STDIN>);
 
     if ($get =~ /\A(q|quit)\z/) {
@@ -88,7 +92,7 @@ sub main {
         exit;
     }
     elsif ($get =~ /\A\z/) {
-        main($fmt);
+        init();
     }
     elsif ($get =~ /\A(ls)\z/) {
         iter($fmt);
@@ -106,7 +110,7 @@ sub main {
             $other = $2;
             @other = split / /, $other;
         }
-        elsif ($get =~ /\A(\S+)\z/) {
+        elsif ($get =~ /\A(\S+)(\s*)\z/) {
             $first = $1;
         } else {
             die "Can't open target:$!";
@@ -154,7 +158,7 @@ sub main {
 
         if (scalar(@$trash) == 0) {
             say "Not matched: $get\n";
-            main($fmt);
+            init();
         } else {
             del($trash, $fmt);
         }
@@ -170,7 +174,7 @@ sub del {
 
     chomp(my $decision = <STDIN>);
     if ($decision =~/(y|yes)/i) {
-        my $trash = '$HOME/Dropbox/me/trash/my_trash_box';
+        my $trash = '$HOME/.tmp_trash/my_trash_box';
         system("if [ ! -e $trash ] ; then mkdir $trash ; fi") == 0 or die "system 'mkdir' failed: $?";
         system("mv @trash $trash") == 0 or die "system 'mv' failed: $?";
         for (@trash) {
@@ -179,5 +183,6 @@ sub del {
     } else {
         say "Nothing changes.";
     }
-    main($fmt);
+    say '';
+    init();
 }
